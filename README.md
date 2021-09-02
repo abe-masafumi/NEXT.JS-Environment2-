@@ -66,9 +66,9 @@ yarn add -D tailwindcss@latest postcss@latest autoprefixer@latest
 npx tailwindcss init -p
 ```
 
-> Next.jsのグローバルのCSSの設定に、Tailwindの設定を入れます。
-> 元にあった値は使わないので、まるごと入れ替え。
-> `styles/globals.css`の内容を編集する
+> Next.jsのグローバルのCSSの設定に、Tailwindの設定を入れます。  
+> 元にあった値は使わないので、まるごと入れ替え。  
+> `styles/globals.css`の内容を編集する。  
 ```css
 @tailwind base;
 @tailwind components;
@@ -85,12 +85,12 @@ npx tailwindcss init -p
 Home.modules.cssは不要になるので削除します。
 
 - Sassの設定
-> SCSSを使うため、Next.jsのドキュメントに沿ってSASSを入れて行きます。
+> SCSSを使うため、Next.jsのドキュメントに沿ってSASSを入れて行きます。   
 ```bash
 yarn add sass
 ```
 
-> next.config.jsの内容を下記のように編集
+> next.config.jsの内容を下記のように編集  
 (したほうがいいのかわからん)
 ```js
 /** @type {import('next').NextConfig} */
@@ -103,5 +103,130 @@ module.exports = {
     includePaths: [path.join(__dirname, "styles")],
   },
 };
+```
+
+# Storybookの設定
+> 初期設定やサンプルのインストールは以下のコマンドで出来ます。  
+```bash
+npx sb init
+```
+
+```bash
+# StorybookをWebpack5 で起動出来るようにする
+yarn add -D webpack @storybook/builder-webpack5 @storybook/manager-webpack5
+# PostCSS/SASSのloaderを追加する
+yarn add -D style-loader css-loader postcss-loader sass-loader
+```
+
+> .storybook/main.jsの内容を編集する  
+(したほうがいいのかわからん)
+```js
+module.exports = {
+  stories: [
+    "../stories/**/*.stories.mdx",
+    "../stories/**/*.stories.@(js|jsx|ts|tsx)",
+  ],
+  addons: ["@storybook/addon-links", "@storybook/addon-essentials"],
+  core: {
+    builder: "webpack5",
+  },
+  webpackFinal: (config) => {
+    config.module.rules.push({
+      test: /\.scss$/,
+      sideEffects: true,
+      use: [
+        "style-loader",
+        {
+          loader: "css-loader",
+          options: {
+            importLoaders: 2,
+          },
+        },
+        {
+          loader: "postcss-loader",
+          options: {
+            postcssOptions: {
+              plugins: [require("tailwindcss"), require("autoprefixer")],
+            },
+          },
+        },
+        {
+          loader: "sass-loader",
+          options: {
+            sourceMap: true,
+          },
+        },
+      ],
+    });
+
+    return config;
+  },
+};
+```
+> .storybook/preview.jsの内容を編集  
+(したほうがいいのかわからん)
+```js
+import "../styles/globals.scss"
+
+export const parameters = {
+  actions: { argTypesRegex: "^on[A-Z].*" },
+  controls: {
+    matchers: {
+      color: /(background|color)$/i,
+      date: /Date$/,
+    },
+  },
+}
+```
+
+なんかsass関連でエラーが出てたので答えうつしました。意味不
+サンプルhttps://github.com/otanu/nextjs-boilerplate
+```bash
+# 設定に問題がなければ表示される
+yarn storybook
+```
+<img src="comp.png">
+
+# Prettierの設定
+```bash
+yarn add -D prettier eslint-config-prettier
+# .prettierrc.jsonファイルを作成
+echo {}> .prettierrc.json
+# .prettierignoreファイルを作成
+touch .prettierignore
+```
+
+> .prettierignoreに追記  
+```txt
+.next
+node_modules
+```
+
+> .prettierrc.jsonに追記  
+```json
+// 内容はお好みで。
+{
+  "endOfLine": "lf",
+  "semi": false,
+  "trailingComma": "all",
+  "singleQuote": true,
+  "printWidth": 100,
+  "tabWidth": 2
+}
+```
+
+> .eslintrc.jsonの内容を変更  
+```json
+{
+  "extends": ["next/core-web-vitals", "prettier"]
+}
+```
+
+> yarn prettier --check . で対象のファイルを確認できる  
+(なんかエラー出たけど)
+
+> yarn prettier で実行できるように、package.json のscriptsに以下の設定を追加します。  
+```json
+"prettier": "prettier --write .",
 ```
 
